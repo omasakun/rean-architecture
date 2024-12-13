@@ -1,22 +1,28 @@
-# ***REAN*** architecture
+# ***REAN*** - Reccurent Embedding Approximation Network
 
-most language models generate text by returning the next token predicted in a given sequence.
+## Overview
 
-the next token returned is usually a 1hot / probability distribution around the desired word.
+Traditional language models generate text by predicting the next token in a sequence. This typically involves predicting a probability distribution over the vocabulary.
 
-***REAN*** relies on returning the embeddings vector of the next token, not its idx.
+REAN takes a different approach, directly predicting the embedding of the next token. 
 
-if you want to just run the model and play around, go to the run_model.ipynb file, load the correct weights + word2vec, and run all.
+### Potential Advantages:
+* **Lower Model Complexity**: By directly predicting embeddings, the model can be smaller and faster.
+* **Enhanced Flexibility**: Embeddings can capture semantic and syntactic information, potentially leading to more creative and coherent text generation.
 
-main improvements:
-  - lower weight compared to normal method
-  - faster (bcs of lower weight)
+### Key Challenges and Limitations:
+* **Dependency on External Word Embeddings**: REAN relies on a pre-trained word embedding model, adding an additional layer of complexity and potentially limiting its performance.
+* **Current Performance**: While promising in theory, REAN's current implementation still exhibits suboptimal performance compared to state-of-the-art language models.
 
-disadvantages:
-  - requires dedicated external word2vec model
-  - still really bad performance
+## Getting Started
 
-feel free to actually add a good readme, this is just a placeholder :)
+### Running the model:
+* Load pre-trained REAN model and the corresponding word embedding model.
+* Configure and execute the `run_model.ipynb` notebook to generate text.
+
+### Training REAN model:
+* Load word embedding model and the plaintext dataset.
+* Configure and execute the `train_REAN.ipynb` notebook to train and test the model.
 
 more info in this vid:
 https://www.youtube.com/watch?v=ECx2oLYXRms
