@@ -21,11 +21,11 @@ import tokenizer
 import os
 import math
 from torch.utils.tensorboard import SummaryWriter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # %%
 # word2vec
-model_file = fr"./embedding_models/YOUR_GENSIM_MODEL_NAME.model"
+model_file = fr"embedding_models\b4cksh0t5_checkp3.model"#fr"./embedding_models/YOUR_GENSIM_MODEL_NAME.model"
 embeddings_model = Word2Vec.load(model_file)
 
 vector_size = embeddings_model.vector_size        # aka embedding dim
@@ -38,11 +38,11 @@ dropout_prob = 0.0                                # 0.0 ---> everything normal  
 # dataset
 # !!!WARNING!!! bcs of various optimizations / errors on 8aafff's part small toy datasets dont work.
 # if ur running a mini dataset, copy paste the text inside multiple times for proper execution
-train_dataset_path = fr"./datasets/YOUR_PLAINTEXT_TRAIN_DATASET.txt"
-test_dataset_path = fr"./datasets/YOUR_PLAINTEXT_TEST_DATASET.txt"
+train_dataset_path = fr"datasets\test_dset.plaintextdset"#fr"./datasets/YOUR_PLAINTEXT_TRAIN_DATASET.txt"
+test_dataset_path = fr"datasets\test_dset.plaintextdset"#fr"./datasets/YOUR_PLAINTEXT_TEST_DATASET.txt"
 
-examples_train = 640#64 * 8 * 8 * 8 * 8 * 8 * 8 * 8
-examples_test = 640# * 8 * 8
+examples_train = 64 * 8 * 8 * 8 * 8 * 8 * 8 * 8
+examples_test = 64 * 8 * 8
 
 # train
 train_epochs = 120
@@ -76,12 +76,15 @@ storage_device = torch.device("cpu")
 
 use_tensorboard = True
 log_dir = "./runs" # irrelevant if use_tensorboard = False
-run_name = "exp1" # irrelevant if use_tensorboard = False
+run_name = "exp2" # irrelevant if use_tensorboard = False
 
 # checkpoints & backups
 save_checkpoint_batch = 512
 save_dir = log_dir + "/" + run_name + "/" + "weights"
 checkpoint_name = "REAN_checkpoint_date_[DATE]_batch_[BATCH]_epoch_[EPOCH].pth"
+
+# completely miscelanious
+UTC_delta = 3 # this is for timestamping checkpoints, not neccesary to adjust
 
 # %%
 # command to get freaky and bulldoze the entire server (needed in case FBI bust down the door):
@@ -174,16 +177,22 @@ class transformer_block(nn.Module):
         
         self.activ_func = leaky_tanh_smart()
         
-        self.attn = attention_mech()
+        self.attn1 = attention_mech()
+        self.attn2 = attention_mech()
+        self.attn3 = attention_mech()
         
         self.fc = nn.Linear(vector_size, vector_size)
         
         self.norm1 = nn.LayerNorm(vector_size)
         self.norm2 = nn.LayerNorm(vector_size)
+        self.norm3 = nn.LayerNorm(vector_size)
+        self.norm4 = nn.LayerNorm(vector_size)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.norm1(x + self.attn(x)[0])
-        x = self.norm2(x + self.activ_func(self.fc(x)))
+        x = self.norm1(x + self.attn1(x)[0])
+        x = self.norm2(x + self.attn2(x)[0])
+        x = self.norm3(x + self.attn3(x)[0])
+        x = self.norm4(x + self.activ_func(self.fc(x)))
         
         return x
 
@@ -492,6 +501,8 @@ class REAN_dataset(Dataset):
         return self.current_check - 1   # the -1 is just in case
     
     def __init__(self, path, num_examples, context_length, embeddings_model, verify_dataset_size=True):
+        print(f"Initializing dataset in worker {os.getpid()}")
+        
         # transfer to object wide variables
         self.path = path
         self.context_length = context_length
@@ -511,8 +522,8 @@ class REAN_dataset(Dataset):
         return self.construct_example(index)
 
 # %%
-train_dataset = REAN_dataset(train_dataset_path, examples_train, context_length, embeddings_model, verify_dataset_size=False)
-test_dataset = REAN_dataset(test_dataset_path, examples_test, context_length, embeddings_model, verify_dataset_size=False)
+train_dataset = REAN_dataset(train_dataset_path, examples_train, context_length, embeddings_model, verify_dataset_size=True)
+test_dataset = REAN_dataset(test_dataset_path, examples_test, context_length, embeddings_model, verify_dataset_size=True)
 
 # %%
 print("please validate dataset: does this look correct?\n")
@@ -520,7 +531,7 @@ print("please validate dataset: does this look correct?\n")
 with torch.no_grad():
     rnd_offset = random.randint(0, 100)
     
-    for idx in range(3):
+    for idx in range(0):
         print(f"sample {idx}:[nline]{tokenizer.detokenize_segment(devectorize_segment(train_dataset[idx + rnd_offset][0].detach(), embeddings_model))}[nline]------------------------------------------------------------[nline]{tokenizer.detokenize_segment(devectorize_segment(train_dataset[idx + rnd_offset][1].detach(), embeddings_model))}".replace("\n", " ").replace("[nline]", "\n"))
 
 # %%
@@ -548,7 +559,6 @@ for epoch in range(train_epochs):
     # training loop
     for current_segment, target in train_loader:
         batch += 1
-        
         
         # move batch to gpu
         current_segment = current_segment.to(run_device)
@@ -607,7 +617,7 @@ for epoch in range(train_epochs):
             os.makedirs(save_dir, exist_ok=True)
             
             torch.save(net, save_dir + "/" + checkpoint_name
-                       .replace("[DATE]", (datetime.utcnow() + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S'))
+                       .replace("[DATE]", (datetime.now(timezone(timedelta(hours=UTC_delta)))).strftime('%Y-%m-%d_%H-%M-%S'))
                        .replace("[BATCH]", str(batch))
                        .replace("[EPOCH]", str(epoch)))
     
@@ -626,7 +636,7 @@ net.eval()
 clear_output()
 
 # %%
-prompt = "human: " + "write a list of the top 10 sports cars" + " network: "
+prompt = "human: " + "what is language?" + "\nnetwork: "
 tokens_to_predict = 128
 display_tqdm = True
 

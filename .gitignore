@@ -7,5 +7,8 @@
 # Ignore all gensim's util .npy files
 *.npy
 
-# its not in gitignore because txts are used elsewhere,
-# but dont upload 100TB datasets to the repo :)
+# i name the datasets that so they dont interfere with .txts
+*.plaintextdset
+
+# all expiriments
+runs/
