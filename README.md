@@ -25,4 +25,4 @@ REAN takes a different approach, directly predicting the embedding of the next t
 * Configure and execute the `train_REAN.ipynb` notebook to train and test the model.
 
 more info in this vid:
-https://www.youtube.com/watch?v=ECx2oLYXRms
+https://youtu.be/_B2RImihdUI
